@@ -5,31 +5,79 @@ import java.util.Arrays;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
+
 @Component
 public class Window {
-    int width = 80;
-    int height = 24;
+    int WIDTH = 80;
+    int HEIGHT = 24;
 
-    char[][] matrix = new char[height][width];
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_COLOR_RESET = "\u001B[0m";
+    public static final String ANSI_CLEAR = "\033[H\033[2J";
 
-    private void update() {
-        char[] line = new char[width];
-        Arrays.fill(line, 'A');
-        Arrays.fill(matrix, line);
+    char[][] matrix = new char[HEIGHT][WIDTH];
+
+    @PostConstruct
+    private void init() {
+        for (int i = 0; i < HEIGHT; i++) {
+            Arrays.fill(matrix[i], ' ');
+        }
     }
 
-    @Scheduled(fixedRate = 600)
+    private void update() {
+        for (int i = 0; i < HEIGHT - 1; i++) {
+            for (int j = 0; j < WIDTH; j++) {
+                matrix[i][j] = matrix[i + 1][j];
+            }
+        }
+        for (int j = 0; j < WIDTH; j++) {
+            switch (matrix[HEIGHT - 1][j]) {
+                case 'T':
+                    matrix[HEIGHT - 1][j] = 'E';
+                    break;
+                case 'E':
+                    matrix[HEIGHT - 1][j] = 'R';
+                    break;
+                case 'R':
+                    matrix[HEIGHT - 1][j] = 'M';
+                    break;
+                case 'M':
+                    matrix[HEIGHT - 1][j] = 'O';
+                    break;
+                case 'O':
+                    matrix[HEIGHT - 1][j] = 'N';
+                    break;
+                case 'N':
+                    matrix[HEIGHT - 1][j] = 'A';
+                    break;
+                case 'A':
+                    matrix[HEIGHT - 1][j] = 'L';
+                    break;
+                case 'L':
+                    matrix[HEIGHT - 1][j] = ' ';
+                    break;
+                default:
+                    matrix[HEIGHT - 1][j] = Math.random() < 0.005 ? 'T' : ' ';
+                    break;
+            }
+        }
+    }
+
+    @Scheduled(fixedRate = 66)
     public void draw() {
         update();
-        System.out.print("\033[H\033[2J");
+        System.out.print(ANSI_GREEN + ANSI_CLEAR);
         System.out.flush();
 
         System.out.println();
-        for(int i = 0; i< height ; i++) {
-            for(int j = 0; j< width; j++) {
-                System.out.print(matrix[i][j]);
+        for (int i = 0; i < HEIGHT; i++) {
+            String str = "";
+            for (int j = 0; j < WIDTH; j++) {
+                str += matrix[i][j];
             }
-            System.out.println();
+            System.out.println(str);
         }
+        System.out.print(ANSI_COLOR_RESET);
     }
 }
