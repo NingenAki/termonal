@@ -64,20 +64,20 @@ public class Window {
         }
     }
 
-    @Scheduled(fixedRate = 66)
+    //@Scheduled(fixedRate = 100)
     public void draw() {
         update();
-        System.out.print(ANSI_GREEN + ANSI_CLEAR);
-        System.out.flush();
 
         System.out.println();
+        StringBuilder builder = new StringBuilder();
+        builder.append(ANSI_GREEN + ANSI_CLEAR);
         for (int i = 0; i < HEIGHT; i++) {
-            String str = "";
             for (int j = 0; j < WIDTH; j++) {
-                str += matrix[i][j];
+                builder.append(matrix[i][j]);
             }
-            System.out.println(str);
+            builder.append("\n");
         }
-        System.out.print(ANSI_COLOR_RESET);
+        builder.append(ANSI_COLOR_RESET);
+        System.out.print(builder.toString());
     }
 }
