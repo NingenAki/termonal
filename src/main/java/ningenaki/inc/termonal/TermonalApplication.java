@@ -1,7 +1,8 @@
 package ningenaki.inc.termonal;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableScheduling
@@ -9,7 +10,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class TermonalApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(TermonalApplication.class, args);
+		SpringApplicationBuilder builder = new SpringApplicationBuilder(TermonalApplication.class);
+		builder.headless(false);
+		ConfigurableApplicationContext context = builder.run(args);
 	}
 
 }
