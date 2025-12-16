@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 
@@ -21,8 +23,10 @@ public class Window {
     int WIDTH = 200;
     int HEIGHT = 50;
 
-    int BOX_WIDTH = 15;
-    int BOX_HEIGHT = 17;
+    int WORD_SIZE = 5;
+    int TRYES = 6;
+    int BOX_WIDTH = 4 + WORD_SIZE * 2;
+    int BOX_HEIGHT = 4 + TRYES * 2;
     int BOX_OFFSET_X = (WIDTH - BOX_WIDTH) / 2;
     int BOX_OFFSET_Y = (HEIGHT - BOX_HEIGHT) / 2;
 
@@ -54,8 +58,8 @@ public class Window {
         Arrays.fill(box[BOX_HEIGHT - 1], '░');
         box[BOX_HEIGHT - 1][0] = ' ';
 
-        for (int j = 2; j < BOX_HEIGHT - 3; j += (BOX_HEIGHT - 5) / 6) {
-            for (int i = 2; i < BOX_WIDTH - 3; i += (BOX_WIDTH - 5) / 5) {
+        for (int j = 2; j < BOX_HEIGHT - 3; j += 2) {
+            for (int i = 2; i < BOX_WIDTH - 3; i += 2) {
                 box[j][i] = '_';
             }
         }
@@ -78,8 +82,13 @@ public class Window {
                         .createTerminalEmulator();
 
             matrixStream.update();
-            terminal.pollInput();
+            KeyStroke keyStroke = terminal.pollInput();
+            if (keyStroke != null) {
+                log.info(keyStroke.toString());
+                if (keyStroke.getKeyType().equals(KeyType.EOF)) System.exit(0);
+            }
             terminal.clearScreen();
+            terminal.setBackgroundColor(TextColor.ANSI.BLACK);
             terminal.setForegroundColor(TextColor.ANSI.GREEN);
             for (int y = 0; y < HEIGHT; y++) {
                 terminal.setCursorPosition(0, y);
