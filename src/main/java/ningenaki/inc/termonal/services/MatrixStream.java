@@ -2,9 +2,6 @@ package ningenaki.inc.termonal.services;
 
 import java.util.Arrays;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class MatrixStream {
     private final int WIDTH;
     private final int HEIGHT;

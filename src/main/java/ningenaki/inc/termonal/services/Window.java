@@ -1,7 +1,6 @@
 package ningenaki.inc.termonal.services;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,54 +22,23 @@ public class Window {
     int WIDTH = 200;
     int HEIGHT = 50;
 
-    int WORD_SIZE = 5;
-    int TRYES = 6;
-    int BOX_WIDTH = 4 + WORD_SIZE * 2;
-    int BOX_HEIGHT = 4 + TRYES * 2;
-    int BOX_OFFSET_X = (WIDTH - BOX_WIDTH) / 2;
-    int BOX_OFFSET_Y = (HEIGHT - BOX_HEIGHT) / 2;
-
     Terminal terminal;
-    char[][] box = new char[BOX_HEIGHT][BOX_WIDTH];
 
-    int cursor_x = 2;
-    int cursor_y = 2;
+    int cursor_x = 0;
+    int cursor_y = 0;
+
+    int WORD_SIZE = 5;
+    int TRIES = 6;
 
     @Autowired
     private Words words;
 
     private MatrixStream matrixStream = new MatrixStream(WIDTH, HEIGHT);
+    private Box box = new Box(WORD_SIZE, TRIES);
 
     @PostConstruct
     private void init() {
-        Arrays.fill(box[0], '▄');
-        box[0][BOX_WIDTH - 1] = ' ';
-        for (int y = 1; y < BOX_HEIGHT - 2; y++) {
-            Arrays.fill(box[y], ' ');
-            box[y][0] = '█';
-            box[y][BOX_WIDTH - 2] = '█';
-            box[y][BOX_WIDTH - 1] = '░';
-        }
-        Arrays.fill(box[BOX_HEIGHT - 2], '▄');
-        box[BOX_HEIGHT - 2][0] = '█';
-        box[BOX_HEIGHT - 2][BOX_WIDTH - 2] = '█';
-        box[BOX_HEIGHT - 2][BOX_WIDTH - 1] = '░';
-        Arrays.fill(box[BOX_HEIGHT - 1], '░');
-        box[BOX_HEIGHT - 1][0] = ' ';
-
-        for (int j = 2; j < BOX_HEIGHT - 3; j += 2) {
-            for (int i = 2; i < BOX_WIDTH - 3; i += 2) {
-                box[j][i] = '_';
-            }
-        }
-    }
-
-    private char getBoxChar(int x, int y) {
-        return box[y - BOX_OFFSET_Y][x - BOX_OFFSET_X];
-    }
-
-    private boolean isInBox(int y, int x) {
-        return y >= BOX_OFFSET_Y && y < BOX_OFFSET_Y + BOX_HEIGHT && x >= BOX_OFFSET_X && x < BOX_OFFSET_X + BOX_WIDTH;
+        box.setOrigin((WIDTH - box.getWidth()) / 2, (HEIGHT - box.getHeight()) / 2);
     }
 
     @Scheduled(fixedRate = 100)
@@ -85,7 +53,25 @@ public class Window {
             KeyStroke keyStroke = terminal.pollInput();
             if (keyStroke != null) {
                 log.info(keyStroke.toString());
-                if (keyStroke.getKeyType().equals(KeyType.EOF)) System.exit(0);
+                switch (keyStroke.getKeyType()) {
+                    case KeyType.EOF:
+                        System.exit(0);
+                        break;
+                    case KeyType.Character:
+                        box.setLetter(keyStroke.getCharacter(), cursor_x, cursor_y);
+                    case KeyType.ArrowRight:
+                        if (cursor_x + 1 < WORD_SIZE)
+                            cursor_x++;
+                        break;
+                    case KeyType.Backspace:
+                        box.setLetter(null, cursor_x, cursor_y);
+                    case KeyType.ArrowLeft:
+                        if (cursor_x > 0)
+                            cursor_x--;
+                        break;
+                    default:
+                        break;
+                }
             }
             terminal.clearScreen();
             terminal.setBackgroundColor(TextColor.ANSI.BLACK);
@@ -93,14 +79,20 @@ public class Window {
             for (int y = 0; y < HEIGHT; y++) {
                 terminal.setCursorPosition(0, y);
                 for (int x = 0; x < WIDTH; x++) {
-                    if (isInBox(y, x))
-                        terminal.putCharacter(getBoxChar(x, y));
-                    else
+                    if (box.isIn(y, x)) {
+                        if (box.offsetX(cursor_x) == x && box.offsetY(cursor_y) == y) {
+                            terminal.setBackgroundColor(TextColor.ANSI.GREEN);
+                            terminal.setForegroundColor(TextColor.ANSI.BLACK);
+                            terminal.putCharacter(box.getChar(x, y));
+                            terminal.setBackgroundColor(TextColor.ANSI.BLACK);
+                            terminal.setForegroundColor(TextColor.ANSI.GREEN);
+                        } else {
+                            terminal.putCharacter(box.getChar(x, y));
+                        }
+                    } else
                         terminal.putCharacter(matrixStream.get(x, y));
                 }
             }
-            terminal.setForegroundColor(TextColor.ANSI.DEFAULT);
-            terminal.setCursorPosition(BOX_OFFSET_X + cursor_x, BOX_OFFSET_Y + cursor_y);
             terminal.flush();
         } catch (IOException ex) {
             log.error("Erro ao printar no termonal", ex);
