@@ -5,6 +5,8 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -39,7 +41,6 @@ public class Words {
 
                 normalized = all.stream().collect(
                         Collectors.toMap(value -> normalize(value), value -> value));
-                normalized.forEach((key, value) -> log.info(key + ": " + value));
             }
         } catch (Exception ex) {
             log.error("Erro gerando palavras", ex);
@@ -60,8 +61,14 @@ public class Words {
         return all.get(r);
     }
 
-    public String getWordOfDay(int index /* 0-7, todas as variacoes do termo */) {
-        int r = 0; // basear no timestamp
+    public String getWordOfDay(int index /* 0-6, todas as variacoes do termo */) {
+        long now = System.currentTimeMillis();
+        now = TimeUnit.MILLISECONDS.toDays(now);
+        int size = lists.get(1).size();
+        Random random = new Random(now);
+        for (int i = 0; i < index; i++)
+            random.nextInt(size);
+        int r = random.nextInt(size);
         return lists.get(1).get(r);
     }
 }
