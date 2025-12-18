@@ -23,7 +23,7 @@ public class Words {
     File file = new File("src/main/resources/palavras5.json");
     List<List<String>> lists;
     List<String> all;
-    Map<String, String> normalized;
+    Map<String, String> map;
 
     public Words() {
         try {
@@ -39,12 +39,16 @@ public class Words {
                 all.addAll(lists.get(0));
                 all.addAll(lists.get(1));
 
-                normalized = all.stream().collect(
+                map = all.stream().collect(
                         Collectors.toMap(value -> normalize(value), value -> value));
             }
         } catch (Exception ex) {
             log.error("Erro gerando palavras", ex);
         }
+    }
+
+    public String get(String word) {
+        return map.get(word);
     }
 
     public String normalize(String word) {
@@ -53,12 +57,17 @@ public class Words {
     }
 
     public boolean isWordValid(String word) {
-        return normalized.containsKey(word);
+        return map.containsKey(word);
     }
 
     public String getRandomWord() {
         int r = (int) (Math.random() * all.size());
         return all.get(r);
+    }
+
+    public String getWordOfDay(int index, boolean normalized) {
+        String wordOfDay = getWordOfDay(index);
+        return normalized ? normalize(wordOfDay) : wordOfDay;
     }
 
     public String getWordOfDay(int index /* 0-6, todas as variacoes do termo */) {

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.input.KeyStroke;
@@ -70,6 +71,8 @@ public class Window {
                 case KeyType.Enter:
                     String word = box.getWord(cursor_y);
                     if (words.isWordValid(word) && cursor_y + 1 < TRIES_SINGLE) {
+                        box.validateWord(words.getWordOfDay(0, true), word, cursor_y);
+                        box.addAccents(cursor_y, words.get(word));
                         cursor_y++;
                         cursor_x = 0;
                     }
@@ -99,7 +102,12 @@ public class Window {
                         terminal.setBackgroundColor(TextColor.ANSI.BLACK);
                         terminal.setForegroundColor(TextColor.ANSI.GREEN);
                     } else {
+                        SGR sgr = box.getLetterState(x, y).getSgr();
+                        if (sgr != null)
+                            terminal.enableSGR(sgr);
                         terminal.putCharacter(box.getChar(x, y));
+                        if (sgr != null)
+                            terminal.disableSGR(sgr);
                     }
                 } else
                     terminal.putCharacter(matrixStream.get(x, y));
