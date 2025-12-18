@@ -27,7 +27,9 @@ public class Window {
     int cursor_y = 0;
 
     int WORD_SIZE = 5;
-    int TRIES = 6;
+    int TRIES_SINGLE = 6;
+    int TRIES_DUO = 7;
+    int TRIES_QUARTET = 9;
 
     long lastBlink = 0;
     boolean blink = true;
@@ -36,7 +38,7 @@ public class Window {
     private Words words;
 
     private MatrixStream matrixStream = new MatrixStream(WIDTH, HEIGHT);
-    private Box box = new Box(WORD_SIZE, TRIES);
+    private Box box = new Box(WORD_SIZE, TRIES_SINGLE);
 
     public Window() {
         box.setOrigin((WIDTH - box.getWidth()) / 2, (HEIGHT - box.getHeight()) / 2);
