@@ -71,10 +71,13 @@ public class Window {
                 case KeyType.Enter:
                     String word = box.getWord(cursor_y);
                     if (words.isWordValid(word) && cursor_y + 1 < TRIES_SINGLE) {
-                        box.validateWord(words.getWordOfDay(0, true), word, cursor_y);
                         box.addAccents(cursor_y, words.get(word));
-                        cursor_y++;
-                        cursor_x = 0;
+                        if(!box.validateWord(words.getWordOfDay(0, true), word, cursor_y)){
+                            cursor_y++;
+                            cursor_x = 0;
+                        } else {
+                            box.setWon(true);
+                        }
                     }
                     break;
                 default:
@@ -95,7 +98,7 @@ public class Window {
             terminal.setCursorPosition(0, y);
             for (int x = 0; x < WIDTH; x++) {
                 if (box.isIn(y, x)) {
-                    if (blink && box.offsetX(cursor_x) == x && box.offsetY(cursor_y) == y) {
+                    if (blink && !box.isWon() && box.offsetX(cursor_x) == x && box.offsetY(cursor_y) == y) {
                         terminal.setBackgroundColor(TextColor.ANSI.GREEN);
                         terminal.setForegroundColor(TextColor.ANSI.BLACK);
                         terminal.putCharacter(box.getChar(x, y));

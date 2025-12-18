@@ -5,8 +5,12 @@ import java.util.Arrays;
 import com.googlecode.lanterna.SGR;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public class Box {
+    @Getter
+    @Setter
+    private boolean won;
     private final int tries;
     private final int wordSize;
     @Getter
@@ -138,6 +142,7 @@ public class Box {
     }
 
     public boolean validateWord(String answer, String word, int cursorY) {
+        if(won) return true;
         char[] letters = answer.toCharArray();
         boolean valid = true;
         for (int x = 0; x < wordSize; x++) {
@@ -167,12 +172,14 @@ public class Box {
     }
 
     public void addAccents(int cursorY, String word) {
+        if(won) return;
         for(int x = 0; x < wordSize; x++) {
             box[innerOffsetY(cursorY)][innerOffsetX(x)] = word.charAt(x);
         }
     }
 
     public void setLetter(Character c, int cursorX, int cursorY) {
+        if(won) return;
         if (c == null)
             box[innerOffsetY(cursorY)][innerOffsetX(cursorX)] = EMPTY;
         else
