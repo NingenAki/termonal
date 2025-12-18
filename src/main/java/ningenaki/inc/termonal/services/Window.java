@@ -67,6 +67,13 @@ public class Window {
                     if (cursor_x > 0)
                         cursor_x--;
                     break;
+                case KeyType.Enter:
+                    String word = box.getWord(cursor_y);
+                    if (words.isWordValid(word) && cursor_y + 1 < TRIES_SINGLE) {
+                        cursor_y++;
+                        cursor_x = 0;
+                    }
+                    break;
                 default:
                     break;
             }

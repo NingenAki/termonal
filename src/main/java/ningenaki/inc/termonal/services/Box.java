@@ -5,6 +5,7 @@ import java.util.Arrays;
 import lombok.Getter;
 
 public class Box {
+    private final int wordSize;
     @Getter
     private final int width;
     @Getter
@@ -12,11 +13,12 @@ public class Box {
     private int originX = 0;
     private int originY = 0;
 
-    private final char VAZIO = '_';
+    private final Character VAZIO = '_';
 
     private final char[][] box;
 
     public Box(int wordSize, int tries) {
+        this.wordSize = wordSize;
         width = 4 + wordSize * 2;
         height = 4 + tries * 2;
         box = new char[height][width];
@@ -78,5 +80,13 @@ public class Box {
             box[innerOffsetY(cursorY)][innerOffsetX(cursorX)] = VAZIO;
         else
             box[innerOffsetY(cursorY)][innerOffsetX(cursorX)] = Character.toUpperCase(c);
+    }
+
+    public String getWord(int cursorY) {
+        StringBuilder builder = new StringBuilder();
+        for (int x = 0; x < wordSize; x++)
+            builder.append(box[innerOffsetY(cursorY)][innerOffsetX(x)]);
+        String word = builder.toString();
+        return word.contains(VAZIO.toString()) ? null : word;
     }
 }
