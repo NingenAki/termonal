@@ -2,7 +2,7 @@ package ningenaki.inc.termonal.services;
 
 import java.util.Arrays;
 
-import com.googlecode.lanterna.SGR;
+import com.googlecode.lanterna.TextColor;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -33,15 +33,15 @@ public class Box {
 
     public static enum State {
         NEUTRAL(null),
-        WRONG(SGR.CROSSED_OUT),
-        ELSEWHERE(null),
-        RIGHT(SGR.BOLD);
+        WRONG(TextColor.ANSI.BLACK_BRIGHT),
+        ELSEWHERE(TextColor.ANSI.YELLOW_BRIGHT),
+        RIGHT(TextColor.ANSI.GREEN_BRIGHT);
 
         @Getter
-        private SGR sgr;
+        private TextColor color;
 
-        State(SGR sgr) {
-            this.sgr = sgr;
+        State(TextColor color) {
+            this.color = color;
         }
     }
 
@@ -142,7 +142,8 @@ public class Box {
     }
 
     public boolean validateWord(String answer, String word, int cursorY) {
-        if(won) return true;
+        if (won)
+            return true;
         char[] letters = answer.toCharArray();
         boolean valid = true;
         for (int x = 0; x < wordSize; x++) {
@@ -172,14 +173,16 @@ public class Box {
     }
 
     public void addAccents(int cursorY, String word) {
-        if(won) return;
-        for(int x = 0; x < wordSize; x++) {
+        if (won)
+            return;
+        for (int x = 0; x < wordSize; x++) {
             box[innerOffsetY(cursorY)][innerOffsetX(x)] = word.charAt(x);
         }
     }
 
     public void setLetter(Character c, int cursorX, int cursorY) {
-        if(won) return;
+        if (won)
+            return;
         if (c == null)
             box[innerOffsetY(cursorY)][innerOffsetX(cursorX)] = EMPTY;
         else
