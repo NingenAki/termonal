@@ -63,17 +63,12 @@ public class Box {
         initLetters();
     }
 
-    public boolean submitWord(int cursorY) {
+    public void submitWord(int cursorY) {
         String word = getWord(cursorY);
-        if (words.isWordValid(word) && cursorY + 1 < tries) {
-            addAccents(cursorY, words.get(word));
-            if (!validateWord(words.getWordOfDay(wordIndex, true), word, cursorY)) {
-                return true;
-            } else {
-                setWon(true);
-            }
+        addAccents(cursorY, words.get(word));
+        if(validateWord(words.getWordOfDay(wordIndex, true), word, cursorY)) {
+            setWon(true);
         }
-        return false;
     }
 
     private void initLetters() {

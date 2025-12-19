@@ -30,12 +30,12 @@ public class Window {
     Tab tabSingle = new Tab(WIDTH, HEIGHT, 1);
     Tab tabDuo = new Tab(WIDTH, HEIGHT, 2);
     Tab tabQuartet = new Tab(WIDTH, HEIGHT, 4);
-    
-    public Window() {
+
+    public Window() throws Exception {
         terminal = new DefaultTerminalFactory().setTerminalEmulatorTitle("Termonal")
                 .setInitialTerminalSize(new TerminalSize(WIDTH, HEIGHT))
                 .createTerminalEmulator();
-        currTab = tabSingle;
+        currTab = tabQuartet;
     }
 
     public void getInput() throws IOException {
