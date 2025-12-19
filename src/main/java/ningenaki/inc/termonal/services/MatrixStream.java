@@ -54,9 +54,9 @@ public class MatrixStream {
     }
 
     private boolean shouldStreamNewWord(int x) {
-        if (x > 1 && matrix[HEIGHT - 1][x - 2] != ' ' && matrix[HEIGHT - 2][x - 2] != ' ')
+        if (x > 1 && (matrix[HEIGHT - 1][x - 2] != ' ' || matrix[HEIGHT - 2][x - 2] != ' '))
             return false;
-        if (x > 0 && matrix[HEIGHT - 1][x - 1] != ' ' && matrix[HEIGHT - 2][x - 1] != ' ')
+        if (x > 0 && (matrix[HEIGHT - 1][x - 1] != ' ' || matrix[HEIGHT - 2][x - 1] != ' '))
             return false;
         if (x < WIDTH - 1 && matrix[HEIGHT - 1][x + 1] != ' ')
             return false;
