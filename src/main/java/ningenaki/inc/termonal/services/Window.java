@@ -26,16 +26,16 @@ public class Window {
 
     private MatrixStream matrixStream = new MatrixStream(WIDTH, HEIGHT);
 
-    Tab currTab;
-    Tab tabSingle = new Tab(WIDTH, HEIGHT, 1);
-    Tab tabDuo = new Tab(WIDTH, HEIGHT, 2);
-    Tab tabQuartet = new Tab(WIDTH, HEIGHT, 4);
+    int tabIndex = 0;
+    Tab[] tabs = new Tab[3];
 
     public Window() throws Exception {
         terminal = new DefaultTerminalFactory().setTerminalEmulatorTitle("Termonal")
                 .setInitialTerminalSize(new TerminalSize(WIDTH, HEIGHT))
                 .createTerminalEmulator();
-        currTab = tabQuartet;
+        tabs[0] = new Tab(WIDTH, HEIGHT, 1);
+        tabs[1] = new Tab(WIDTH, HEIGHT, 2);
+        tabs[2] = new Tab(WIDTH, HEIGHT, 4);
     }
 
     public void getInput() throws IOException {
@@ -45,7 +45,19 @@ public class Window {
 
             if (keyStroke.getKeyType() == KeyType.EOF)
                 System.exit(0);
-            currTab.handleKeyStroke(keyStroke);
+            if (keyStroke.getKeyType() == KeyType.Tab) {
+                if (tabIndex < tabs.length - 1) {
+                    tabIndex++;
+                } else
+                    tabIndex = 0;
+            }
+            if (keyStroke.getKeyType() == KeyType.ReverseTab) {
+                if (tabIndex > 0) {
+                    tabIndex--;
+                } else
+                    tabIndex = tabs.length - 1;
+            } else
+                tabs[tabIndex].handleKeyStroke(keyStroke);
         }
     }
 
@@ -54,7 +66,7 @@ public class Window {
         try {
             matrixStream.update();
             getInput();
-            currTab.draw(terminal, matrixStream);
+            tabs[tabIndex].draw(terminal, matrixStream);
         } catch (IOException ex) {
             log.error("Erro ao printar no termonal", ex);
         }
