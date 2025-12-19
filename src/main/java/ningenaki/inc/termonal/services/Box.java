@@ -13,6 +13,7 @@ public class Box {
     private boolean won;
     private final int tries;
     private final int wordSize;
+    private final int wordIndex;
     @Getter
     private final int width;
     @Getter
@@ -31,6 +32,8 @@ public class Box {
 
     private final char[][] box;
 
+    private Words words = Words.getInstance();
+
     public static enum State {
         NEUTRAL(null),
         WRONG(TextColor.ANSI.BLACK_BRIGHT),
@@ -47,9 +50,10 @@ public class Box {
 
     private final State[][] letterState;
 
-    public Box(int wordSize, int tries) {
+    public Box(int wordSize, int tries, int wordIndex) {
         this.tries = tries;
         this.wordSize = wordSize;
+        this.wordIndex = wordIndex;
         width = LEFT_BORDER + wordSize * LETTER_X_SIZE + RIGHT_BORDER;
         height = UPPER_BORDER + tries * LETTER_Y_SIZE + BOTTOM_BORDER;
         box = new char[height][width];
@@ -57,6 +61,19 @@ public class Box {
 
         fillBoxWithBorders();
         initLetters();
+    }
+
+    public boolean submitWord(int cursorY) {
+        String word = getWord(cursorY);
+        if (words.isWordValid(word) && cursorY + 1 < tries) {
+            addAccents(cursorY, words.get(word));
+            if (!validateWord(words.getWordOfDay(wordIndex, true), word, cursorY)) {
+                return true;
+            } else {
+                setWon(true);
+            }
+        }
+        return false;
     }
 
     private void initLetters() {

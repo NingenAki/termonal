@@ -9,7 +9,7 @@ public class MatrixStream {
     private final char[][] matrix;
     private final String[] wordPool;
 
-    private Words words = new Words();
+    private Words words = Words.getInstance();
 
     public MatrixStream(int width, int height) {
         WIDTH = width;

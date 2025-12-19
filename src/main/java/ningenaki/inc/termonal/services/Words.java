@@ -9,23 +9,21 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.springframework.stereotype.Component;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
 public class Words {
     ObjectMapper mapper = new ObjectMapper();
     File file = new File("src/main/resources/palavras5.json");
     List<List<String>> lists;
     List<String> all;
     Map<String, String> map;
+    private static Words instance;
 
-    public Words() {
+    private Words() {
         try {
             if (lists == null) {
                 lists = mapper.readValue(file, new TypeReference<List<List<String>>>() {
@@ -45,6 +43,11 @@ public class Words {
         } catch (Exception ex) {
             log.error("Erro gerando palavras", ex);
         }
+    }
+
+    public static Words getInstance() {
+        if(instance == null) instance = new Words();
+        return instance;
     }
 
     public String get(String word) {
