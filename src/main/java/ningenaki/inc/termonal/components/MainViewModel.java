@@ -1,5 +1,8 @@
 package ningenaki.inc.termonal.components;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 
 import org.springframework.stereotype.Component;
@@ -11,6 +14,7 @@ import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.QuitMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.bubbletea.WindowSizeMessage;
+import com.williamcallahan.tui4j.compat.lipgloss.Style;
 import ningenaki.inc.termonal.services.MatrixStream;
 import ningenaki.inc.termonal.services.Tab;
 
@@ -19,6 +23,7 @@ public class MainViewModel implements Model {
 
     private static final int DEFAULT_WIDTH = 80;
     private static final int DEFAULT_HEIGHT = 24;
+    private static final int HEADER_HEIGHT = 8;
     private static final Duration ANIMATION_INTERVAL = Duration.ofMillis(100);
 
     private MatrixStream matrixStream;
@@ -104,10 +109,11 @@ public class MainViewModel implements Model {
         height = Math.max(1, newHeight);
         matrixStream = new MatrixStream(width, height);
         try {
+            int boardHeight = Math.max(1, height - HEADER_HEIGHT);
             tabs = new Tab[] {
-                    new Tab(width, height, 1),
-                    new Tab(width, height, 2),
-                    new Tab(width, height, 4)
+                    new Tab(width, boardHeight, 1),
+                    new Tab(width, boardHeight, 2),
+                    new Tab(width, boardHeight, 4)
             };
             tabIndex = Math.min(tabIndex, tabs.length - 1);
         } catch (Exception exception) {
@@ -117,7 +123,50 @@ public class MainViewModel implements Model {
 
     @Override
     public String view() {
-        return tabs[tabIndex].view(matrixStream);
+        StringBuilder viewBuilder = new StringBuilder();
+        viewBuilder.append(renderTitleBanner()).append('\n');
+        viewBuilder.append(renderTabHeader()).append('\n');
+        viewBuilder.append(tabs[tabIndex].view(matrixStream));
+        return viewBuilder.toString();
+    }
+
+    private String renderTitleBanner() {
+        String[] titleLines = loadBannerLines();
+        StringBuilder banner = new StringBuilder();
+        for (String line : titleLines) {
+            banner.append(line).append('\n');
+        }
+        return banner.toString();
+    }
+
+    private String[] loadBannerLines() {
+        try {
+            Path bannerPath = Path.of("src/main/resources/banner.txt");
+            return Files.readAllLines(bannerPath, StandardCharsets.UTF_8).toArray(new String[0]);
+        } catch (Exception ex) {
+            return new String[] {
+                    "TERMONAL"
+            };
+        }
+    }
+
+    private String renderTabHeader() {
+        String[] tabLabels = { "SINGLE", "DUO", "QUARTET" };
+        StringBuilder header = new StringBuilder();
+
+        for (int i = 0; i < tabLabels.length; i++) {
+            String label = tabLabels[i];
+            String styleLabel = i == tabIndex
+                    ? Style.newStyle().foreground(ColorPalette.ACCENT).render("[" + label + "]")
+                    : Style.newStyle().foreground(ColorPalette.TERTIARY).render(" " + label + " ");
+
+            header.append(styleLabel);
+            if (i < tabLabels.length - 1) {
+                header.append(' ');
+            }
+        }
+
+        return header.toString();
     }
 
     private record AnimationTick() implements Message {

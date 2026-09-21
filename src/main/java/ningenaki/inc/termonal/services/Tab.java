@@ -1,5 +1,8 @@
 package ningenaki.inc.termonal.services;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
 import ningenaki.inc.termonal.components.ColorPalette;
@@ -23,6 +26,7 @@ public class Tab {
     boolean blink = true;
 
     private final Box[] boxArray;
+    private final Set<Character> usedLetters = new HashSet<>();
 
     public Tab(int width, int height, int wordCount) throws Exception {
         this.width = width;
@@ -107,8 +111,15 @@ public class Tab {
         for (Box box : boxArray) {
             boolean isValid = Words.getInstance().isWordValid(box.getWord(cursorY));
             isAnyValid = isAnyValid || isValid;
-            if (isValid)
+            if (isValid) {
                 box.submitWord(cursorY);
+                String word = box.getWord(cursorY);
+                if (word != null) {
+                    for (char c : word.toCharArray()) {
+                        usedLetters.add(normalizeKeyboardLetter(c));
+                    }
+                }
+            }
         }
         if (isAnyValid && cursorY + 1 < tries) {
             cursorY++;
@@ -116,29 +127,39 @@ public class Tab {
         }
     }
 
+    private char normalizeKeyboardLetter(char letter) {
+        String normalized = Words.getInstance().normalize(String.valueOf(letter));
+        return normalized.isEmpty() ? Character.toUpperCase(letter) : Character.toUpperCase(normalized.charAt(0));
+    }
+
     public String view(MatrixStream matrixStream) {
         StringBuilder output = new StringBuilder();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                String renderedCharacter = String.valueOf(matrixStream.get(x, y));
-                boolean renderedFromMatrix = true;
-                for (Box box : boxArray) {
-                    if (box.isIn(y, x)) {
-                        renderedCharacter = String.valueOf(box.getChar(x, y));
-                        renderedFromMatrix = false;
-                        if (box.isBorder(x, y)) {
-                            renderedCharacter = renderBorder(box, x, y, renderedCharacter);
-                        } else if (blink && !box.isWon() && box.offsetX(cursorX) == x && box.offsetY(cursorY) == y) {
-                            renderedCharacter = "█";
-                        } else {
-                            renderedCharacter = renderLetter(box, x, y, renderedCharacter);
+                String renderedCharacter = " ";
+                if (y < height - 4) {
+                    renderedCharacter = String.valueOf(matrixStream.get(x, y));
+                    boolean renderedFromMatrix = true;
+                    for (Box box : boxArray) {
+                        if (box.isIn(y, x)) {
+                            renderedCharacter = String.valueOf(box.getChar(x, y));
+                            renderedFromMatrix = false;
+                            if (box.isBorder(x, y)) {
+                                renderedCharacter = renderBorder(box, x, y, renderedCharacter);
+                            } else if (blink && !box.isWon() && box.offsetX(cursorX) == x && box.offsetY(cursorY) == y) {
+                                renderedCharacter = "█";
+                            } else {
+                                renderedCharacter = renderLetter(box, x, y, renderedCharacter);
+                            }
+                            break;
                         }
-                        break;
                     }
-                }
-                if (renderedFromMatrix && !renderedCharacter.equals(" ")) {
-                    renderedCharacter = Style.newStyle().foreground(ColorPalette.TEXT_BACKGROUND)
-                            .render(renderedCharacter);
+                    if (renderedFromMatrix && !renderedCharacter.equals(" ")) {
+                        renderedCharacter = Style.newStyle().foreground(ColorPalette.TERTIARY)
+                                .render(renderedCharacter);
+                    }
+                } else {
+                    renderedCharacter = renderKeyboardCell(x, y, renderedCharacter);
                 }
                 output.append(renderedCharacter);
             }
@@ -149,11 +170,37 @@ public class Tab {
         return output.toString();
     }
 
+    private String renderKeyboardCell(int x, int y, String fallback) {
+        String[] keyboardRows = new String[] { "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM" };
+        int keyboardStartLine = height - 4;
+        int rowIndex = y - keyboardStartLine;
+        if (rowIndex < 0 || rowIndex >= keyboardRows.length) {
+            return fallback;
+        }
+
+        String row = keyboardRows[rowIndex];
+        int startX = Math.max(0, (width - (row.length() * 2 - 1)) / 2);
+        for (int i = 0; i < row.length(); i++) {
+            int keyX = startX + i * 2;
+            if (x == keyX) {
+                char letter = row.charAt(i);
+                if (usedLetters.contains(letter)) {
+                    return Style.newStyle().foreground(ColorPalette.MUTED).render(String.valueOf(letter));
+                }
+                return Style.newStyle().foreground(ColorPalette.DIM).render(String.valueOf(letter));
+            }
+            if (x == keyX + 1) {
+                return " ";
+            }
+        }
+        return fallback;
+    }
+
     private String renderBorder(Box box, int x, int y, String character) {
         if (character.equals(" ")) {
             return character;
         }
-        return Style.newStyle().foreground(ColorPalette.BORDER).render(character);
+        return Style.newStyle().foreground(ColorPalette.SECONDARY).render(character);
     }
 
     private String renderLetter(Box box, int x, int y, String character) {
@@ -165,7 +212,7 @@ public class Tab {
             case WRONG -> ColorPalette.WRONG_LETTER;
             case ELSEWHERE -> ColorPalette.ELSEWHERE_LETTER;
             case RIGHT -> ColorPalette.RIGHT_LETTER;
-            case NEUTRAL -> ColorPalette.TEXT_PRIMARY;
+            case NEUTRAL -> ColorPalette.PRIMARY;
         }).render(character);
     }
 
