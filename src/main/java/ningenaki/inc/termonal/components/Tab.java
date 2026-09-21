@@ -1,13 +1,15 @@
-package ningenaki.inc.termonal.services;
+package ningenaki.inc.termonal.components;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import com.williamcallahan.tui4j.compat.lipgloss.Style;
+import com.williamcallahan.tui4j.compat.bubbletea.Command;
+import com.williamcallahan.tui4j.compat.bubbletea.Message;
+import com.williamcallahan.tui4j.compat.bubbletea.Model;
+import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
+import ningenaki.inc.termonal.services.Words;
 
-import ningenaki.inc.termonal.components.ColorPalette;
-
-public class Tab {
+public class Tab implements Model {
     private final int width;
     private final int height;
 
@@ -26,11 +28,15 @@ public class Tab {
     boolean blink = true;
 
     private final Box[] boxArray;
+    private final Keyboard keyboard;
+    private final MatrixStream matrixStream;
     private final Set<Character> usedLetters = new HashSet<>();
 
-    public Tab(int width, int height, int wordCount) throws Exception {
+    public Tab(int width, int height, int wordCount, MatrixStream matrixStream) throws Exception {
         this.width = width;
         this.height = height;
+        this.matrixStream = matrixStream;
+        keyboard = new Keyboard(width);
         boxArray = new Box[wordCount];
         switch (wordCount) {
             case 1:
@@ -98,6 +104,54 @@ public class Tab {
         moveCursor(move);
     }
 
+    @Override
+    public Command init() {
+        return Command.none();
+    }
+
+    @Override
+    public UpdateResult<? extends Model> update(Message msg) {
+        return UpdateResult.from(this);
+    }
+
+    @Override
+    public String view() {        
+        String matrixView = matrixStream.view();
+        String[] matrixLines = matrixView.split("\\R", -1);
+        String[][] boxViews = new String[boxArray.length][];
+        for (int i = 0; i < boxArray.length; i++) {
+            boxArray[i].setCursorPosition(cursorX, cursorY, blink);
+            boxViews[i] = boxArray[i].view().split("\\R", -1);
+        }
+        String[] keyboardView = keyboard.view().split("\\R", -1);
+        StringBuilder output = new StringBuilder();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                String renderedCharacter = " ";
+                if (y < height - 4) {
+                    renderedCharacter = renderedCell(matrixLines[y], x);
+                    for (Box box : boxArray) {
+                        if (box.isIn(y, x)) {
+                            String[] boxLines = boxViews[indexOf(box)];
+                            renderedCharacter = renderedCell(boxLines[y - box.getOriginY()], x - box.getOriginX());
+                            break;
+                        }
+                    }
+                } else {
+                    int keyboardRow = y - (height - 4);
+                    if (keyboardRow < keyboardView.length && x < keyboardView[keyboardRow].length()) {
+                        renderedCharacter = renderedCell(keyboardView[keyboardRow], x);
+                    }
+                }
+                output.append(renderedCharacter);
+            }
+            if (y < height - 1) {
+                output.append('\n');
+            }
+        }
+        return output.toString();
+    }
+
     public void updateCursor() {
         lastBlink++;
         if (lastBlink > 5) {
@@ -116,7 +170,9 @@ public class Tab {
                 String word = box.getWord(cursorY);
                 if (word != null) {
                     for (char c : word.toCharArray()) {
-                        usedLetters.add(normalizeKeyboardLetter(c));
+                        char normalizedLetter = normalizeKeyboardLetter(c);
+                        usedLetters.add(normalizedLetter);
+                        keyboard.addUsedLetters(String.valueOf(normalizedLetter));
                     }
                 }
             }
@@ -132,88 +188,37 @@ public class Tab {
         return normalized.isEmpty() ? Character.toUpperCase(letter) : Character.toUpperCase(normalized.charAt(0));
     }
 
-    public String view(MatrixStream matrixStream) {
-        StringBuilder output = new StringBuilder();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                String renderedCharacter = " ";
-                if (y < height - 4) {
-                    renderedCharacter = String.valueOf(matrixStream.get(x, y));
-                    boolean renderedFromMatrix = true;
-                    for (Box box : boxArray) {
-                        if (box.isIn(y, x)) {
-                            renderedCharacter = String.valueOf(box.getChar(x, y));
-                            renderedFromMatrix = false;
-                            if (box.isBorder(x, y)) {
-                                renderedCharacter = renderBorder(box, x, y, renderedCharacter);
-                            } else if (blink && !box.isWon() && box.offsetX(cursorX) == x && box.offsetY(cursorY) == y) {
-                                renderedCharacter = "█";
-                            } else {
-                                renderedCharacter = renderLetter(box, x, y, renderedCharacter);
-                            }
-                            break;
-                        }
-                    }
-                    if (renderedFromMatrix && !renderedCharacter.equals(" ")) {
-                        renderedCharacter = Style.newStyle().foreground(ColorPalette.TERTIARY)
-                                .render(renderedCharacter);
-                    }
-                } else {
-                    renderedCharacter = renderKeyboardCell(x, y, renderedCharacter);
+
+    private int indexOf(Box box) {
+        for (int i = 0; i < boxArray.length; i++) {
+            if (boxArray[i] == box) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private String renderedCell(String line, int column) {
+        StringBuilder styles = new StringBuilder();
+        int visibleColumn = 0;
+        for (int index = 0; index < line.length(); index++) {
+            char character = line.charAt(index);
+            if (character == '\u001B' && index + 1 < line.length() && line.charAt(index + 1) == '[') {
+                int end = index + 2;
+                while (end < line.length() && !Character.isLetter(line.charAt(end))) {
+                    end++;
                 }
-                output.append(renderedCharacter);
-            }
-            if (y < height - 1) {
-                output.append('\n');
-            }
-        }
-        return output.toString();
-    }
-
-    private String renderKeyboardCell(int x, int y, String fallback) {
-        String[] keyboardRows = new String[] { "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM" };
-        int keyboardStartLine = height - 4;
-        int rowIndex = y - keyboardStartLine;
-        if (rowIndex < 0 || rowIndex >= keyboardRows.length) {
-            return fallback;
-        }
-
-        String row = keyboardRows[rowIndex];
-        int startX = Math.max(0, (width - (row.length() * 2 - 1)) / 2);
-        for (int i = 0; i < row.length(); i++) {
-            int keyX = startX + i * 2;
-            if (x == keyX) {
-                char letter = row.charAt(i);
-                if (usedLetters.contains(letter)) {
-                    return Style.newStyle().foreground(ColorPalette.MUTED).render(String.valueOf(letter));
+                if (end < line.length()) {
+                    styles.append(line, index, end + 1);
+                    index = end;
                 }
-                return Style.newStyle().foreground(ColorPalette.DIM).render(String.valueOf(letter));
+                continue;
             }
-            if (x == keyX + 1) {
-                return " ";
+            if (visibleColumn++ == column) {
+                return styles.append(character).append("\u001B[0m").toString();
             }
         }
-        return fallback;
-    }
-
-    private String renderBorder(Box box, int x, int y, String character) {
-        if (character.equals(" ")) {
-            return character;
-        }
-        return Style.newStyle().foreground(ColorPalette.SECONDARY).render(character);
-    }
-
-    private String renderLetter(Box box, int x, int y, String character) {
-        Box.State state = box.getLetterState(x, y);
-        if (state == Box.State.NEUTRAL || character.equals(" ")) {
-            return character;
-        }
-        return Style.newStyle().foreground(switch (state) {
-            case WRONG -> ColorPalette.WRONG_LETTER;
-            case ELSEWHERE -> ColorPalette.ELSEWHERE_LETTER;
-            case RIGHT -> ColorPalette.RIGHT_LETTER;
-            case NEUTRAL -> ColorPalette.PRIMARY;
-        }).render(character);
+        return " ";
     }
 
 }

@@ -1,9 +1,11 @@
-package ningenaki.inc.termonal.components;
+package ningenaki.inc.termonal.configs;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import com.williamcallahan.tui4j.compat.bubbletea.Program;
+
+import ningenaki.inc.termonal.components.MainViewModel;
 
 @Component 
 public class Runner implements CommandLineRunner {

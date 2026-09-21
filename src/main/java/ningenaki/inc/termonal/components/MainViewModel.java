@@ -1,8 +1,5 @@
 package ningenaki.inc.termonal.components;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 
 import org.springframework.stereotype.Component;
@@ -14,9 +11,6 @@ import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.QuitMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.bubbletea.WindowSizeMessage;
-import com.williamcallahan.tui4j.compat.lipgloss.Style;
-import ningenaki.inc.termonal.services.MatrixStream;
-import ningenaki.inc.termonal.services.Tab;
 
 @Component
 public class MainViewModel implements Model {
@@ -28,6 +22,7 @@ public class MainViewModel implements Model {
 
     private MatrixStream matrixStream;
     private Tab[] tabs;
+    private Header header;
     private int tabIndex;
     private int width = DEFAULT_WIDTH;
     private int height = DEFAULT_HEIGHT;
@@ -108,12 +103,13 @@ public class MainViewModel implements Model {
         width = Math.max(1, newWidth);
         height = Math.max(1, newHeight);
         matrixStream = new MatrixStream(width, height);
+        header = new Header(() -> tabIndex);
         try {
             int boardHeight = Math.max(1, height - HEADER_HEIGHT);
             tabs = new Tab[] {
-                    new Tab(width, boardHeight, 1),
-                    new Tab(width, boardHeight, 2),
-                    new Tab(width, boardHeight, 4)
+                    new Tab(width, boardHeight, 1, matrixStream),
+                    new Tab(width, boardHeight, 2, matrixStream),
+                    new Tab(width, boardHeight, 4, matrixStream)
             };
             tabIndex = Math.min(tabIndex, tabs.length - 1);
         } catch (Exception exception) {
@@ -124,49 +120,9 @@ public class MainViewModel implements Model {
     @Override
     public String view() {
         StringBuilder viewBuilder = new StringBuilder();
-        viewBuilder.append(renderTitleBanner()).append('\n');
-        viewBuilder.append(renderTabHeader()).append('\n');
-        viewBuilder.append(tabs[tabIndex].view(matrixStream));
+        viewBuilder.append(header.view()).append('\n');
+        viewBuilder.append(tabs[tabIndex].view());
         return viewBuilder.toString();
-    }
-
-    private String renderTitleBanner() {
-        String[] titleLines = loadBannerLines();
-        StringBuilder banner = new StringBuilder();
-        for (String line : titleLines) {
-            banner.append(line).append('\n');
-        }
-        return banner.toString();
-    }
-
-    private String[] loadBannerLines() {
-        try {
-            Path bannerPath = Path.of("src/main/resources/banner.txt");
-            return Files.readAllLines(bannerPath, StandardCharsets.UTF_8).toArray(new String[0]);
-        } catch (Exception ex) {
-            return new String[] {
-                    "TERMONAL"
-            };
-        }
-    }
-
-    private String renderTabHeader() {
-        String[] tabLabels = { "SINGLE", "DUO", "QUARTET" };
-        StringBuilder header = new StringBuilder();
-
-        for (int i = 0; i < tabLabels.length; i++) {
-            String label = tabLabels[i];
-            String styleLabel = i == tabIndex
-                    ? Style.newStyle().foreground(ColorPalette.ACCENT).render("[" + label + "]")
-                    : Style.newStyle().foreground(ColorPalette.TERTIARY).render(" " + label + " ");
-
-            header.append(styleLabel);
-            if (i < tabLabels.length - 1) {
-                header.append(' ');
-            }
-        }
-
-        return header.toString();
     }
 
     private record AnimationTick() implements Message {

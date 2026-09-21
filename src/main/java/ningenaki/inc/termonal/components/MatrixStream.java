@@ -1,8 +1,16 @@
-package ningenaki.inc.termonal.services;
+package ningenaki.inc.termonal.components;
 
 import java.util.Arrays;
 
-public class MatrixStream {
+import com.williamcallahan.tui4j.compat.bubbletea.Command;
+import com.williamcallahan.tui4j.compat.bubbletea.Message;
+import com.williamcallahan.tui4j.compat.bubbletea.Model;
+import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
+import com.williamcallahan.tui4j.compat.lipgloss.Style;
+
+import ningenaki.inc.termonal.services.Words;
+
+public class MatrixStream implements Model {
     private final int width;
     private final int height;
     private final char[][] matrix;
@@ -25,6 +33,30 @@ public class MatrixStream {
             return ' ';
         }
         return matrix[y][x];
+    }
+
+    @Override
+    public Command init() {
+        return Command.none();
+    }
+
+    @Override
+    public UpdateResult<? extends Model> update(Message msg) {
+        update();
+        return UpdateResult.from(this);
+    }
+
+    @Override
+    public String view() {
+        StringBuilder output = new StringBuilder();
+        Style matrixStyle = Style.newStyle().foreground(ColorPalette.TERTIARY);
+        for (int y = 0; y < height; y++) {
+            output.append(matrixStyle.render(new String(matrix[y])));
+            if (y < height - 1) {
+                output.append('\n');
+            }
+        }
+        return output.toString();
     }
 
     public void update() {

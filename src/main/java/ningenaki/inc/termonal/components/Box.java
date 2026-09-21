@@ -1,11 +1,17 @@
-package ningenaki.inc.termonal.services;
+package ningenaki.inc.termonal.components;
 
 import java.util.Arrays;
 
+import com.williamcallahan.tui4j.compat.bubbletea.Command;
+import com.williamcallahan.tui4j.compat.bubbletea.Message;
+import com.williamcallahan.tui4j.compat.bubbletea.Model;
+import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
+import com.williamcallahan.tui4j.compat.lipgloss.Style;
 import lombok.Getter;
 import lombok.Setter;
+import ningenaki.inc.termonal.services.Words;
 
-public class Box {
+public class Box implements Model {
     @Getter
     @Setter
     private boolean won;
@@ -18,6 +24,9 @@ public class Box {
     private final int height;
     private int originX = 0;
     private int originY = 0;
+    private int cursorX;
+    private int cursorY;
+    private boolean cursorVisible;
 
     private int LEFT_BORDER = 2;
     private int UPPER_BORDER = 2;
@@ -98,6 +107,44 @@ public class Box {
         originY = y;
     }
 
+    public int getOriginX() {
+        return originX;
+    }
+
+    public int getOriginY() {
+        return originY;
+    }
+
+    public void setCursorPosition(int cursorX, int cursorY, boolean visible) {
+        this.cursorX = cursorX;
+        this.cursorY = cursorY;
+        cursorVisible = visible;
+    }
+
+    @Override
+    public Command init() {
+        return Command.none();
+    }
+
+    @Override
+    public UpdateResult<? extends Model> update(Message msg) {
+        return UpdateResult.from(this);
+    }
+
+    @Override
+    public String view() {
+        StringBuilder builder = new StringBuilder();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                builder.append(renderAt(originX + x, originY + y));
+            }
+            if (y < height - 1) {
+                builder.append('\n');
+            }
+        }
+        return builder.toString();
+    }
+
     public boolean isIn(int y, int x) {
         return y >= originY && y < originY + height && x >= originX
                 && x < originX + width;
@@ -128,6 +175,29 @@ public class Box {
 
     public char getChar(int x, int y) {
         return box[y - originY][x - originX];
+    }
+
+    public String renderAt(int x, int y) {
+        if (cursorVisible && !won && x == offsetX(cursorX) && y == offsetY(cursorY)) {
+            return "█";
+        }
+        String character = String.valueOf(getChar(x, y));
+        if (isBorder(x, y) || character.equals(" ")) {
+            return isBorder(x, y)
+                    ? Style.newStyle().foreground(ColorPalette.SECONDARY).render(character)
+                    : character;
+        }
+
+        State state = getLetterState(x, y);
+        if (state == State.NEUTRAL) {
+            return character;
+        }
+        return Style.newStyle().foreground(switch (state) {
+            case WRONG -> ColorPalette.WRONG_LETTER;
+            case ELSEWHERE -> ColorPalette.ELSEWHERE_LETTER;
+            case RIGHT -> ColorPalette.RIGHT_LETTER;
+            case NEUTRAL -> ColorPalette.PRIMARY;
+        }).render(character);
     }
 
     public State getLetterState(int x, int y) {
