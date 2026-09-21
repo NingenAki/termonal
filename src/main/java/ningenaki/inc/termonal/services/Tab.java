@@ -1,15 +1,9 @@
 package ningenaki.inc.termonal.services;
 
-import java.io.IOException;
+import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
-import com.googlecode.lanterna.TextColor;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
-import com.googlecode.lanterna.terminal.Terminal;
+import ningenaki.inc.termonal.components.ColorPalette;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class Tab {
     private final int width;
     private final int height;
@@ -43,7 +37,8 @@ public class Tab {
             case 2:
                 this.tries = TRIES_DUO;
                 boxArray[0] = new Box(WORD_SIZE, tries, 1);
-                boxArray[0].setOrigin(width / 2 - boxArray[0].getWidth() - GAP / 2, (height - boxArray[0].getHeight()) / 2);
+                boxArray[0].setOrigin(width / 2 - boxArray[0].getWidth() - GAP / 2,
+                        (height - boxArray[0].getHeight()) / 2);
                 boxArray[1] = new Box(WORD_SIZE, tries, 2);
                 boxArray[1].setOrigin(width / 2 + GAP / 2, (height - boxArray[0].getHeight()) / 2);
                 break;
@@ -53,89 +48,125 @@ public class Tab {
                 boxArray[0].setOrigin(width / 2 - boxArray[0].getWidth() * 2 - 3 * GAP / 2,
                         (height - boxArray[0].getHeight()) / 2);
                 boxArray[1] = new Box(WORD_SIZE, tries, 4);
-                boxArray[1].setOrigin(width / 2 - boxArray[1].getWidth() - GAP / 2, (height - boxArray[0].getHeight()) / 2);
+                boxArray[1].setOrigin(width / 2 - boxArray[1].getWidth() - GAP / 2,
+                        (height - boxArray[0].getHeight()) / 2);
                 boxArray[2] = new Box(WORD_SIZE, tries, 5);
                 boxArray[2].setOrigin(width / 2 + GAP / 2, (height - boxArray[0].getHeight()) / 2);
                 boxArray[3] = new Box(WORD_SIZE, tries, 6);
-                boxArray[3].setOrigin(width / 2 + boxArray[3].getWidth() + 3 * GAP / 2, (height - boxArray[0].getHeight()) / 2);
+                boxArray[3].setOrigin(width / 2 + boxArray[3].getWidth() + 3 * GAP / 2,
+                        (height - boxArray[0].getHeight()) / 2);
                 break;
             default:
                 throw new Exception("Número de palavras inválido");
         }
     }
 
-    public void handleKeyStroke(KeyStroke keyStroke) {
-        switch (keyStroke.getKeyType()) {
-            case KeyType.Character:
-                for (int i = 0; i < boxArray.length; i++) {
-                    boxArray[i].setLetter(keyStroke.getCharacter(), cursorX, cursorY);
-                }
-            case KeyType.ArrowRight:
-                if (cursorX + 1 < WORD_SIZE)
-                    cursorX++;
+    public void moveCursor(int x) {
+        cursorX = Math.max(0, Math.min(cursorX + x, WORD_SIZE - 1));
+    }
+
+    public void handleKey(String key) {
+        switch (key) {
+            case "right":
+                moveCursor(1);
                 break;
-            case KeyType.Backspace:
-                for (int i = 0; i < boxArray.length; i++) {
-                    boxArray[i].setLetter(null, cursorX, cursorY);
-                }
-            case KeyType.ArrowLeft:
-                if (cursorX > 0)
-                    cursorX--;
+            case "left":
+                moveCursor(-1);
                 break;
-            case KeyType.Enter:
-                boolean isAnyValid = false;
-                for (Box box : boxArray) {
-                    boolean isValid = Words.getInstance().isWordValid(box.getWord(cursorY));
-                    isAnyValid = isAnyValid || isValid;
-                    if (isValid)
-                        box.submitWord(cursorY);
-                }
-                if (isAnyValid && cursorY + 1 < tries) {
-                    cursorY++;
-                    cursorX = 0;
-                }
+            case "backspace":
+                handleCharacter(null, -1);
+                break;
+            case "delete":
+                handleCharacter(null, 1);
+                break;
+            case "enter":
+                submitCurrentWord();
                 break;
             default:
                 break;
         }
-
     }
 
-    public void draw(Terminal terminal, MatrixStream matrixStream) throws IOException {
-        if (System.currentTimeMillis() - lastBlink > 500) {
-            lastBlink = System.currentTimeMillis();
+    public void handleCharacter(Character character, int move) {
+        for (int i = 0; i < boxArray.length; i++) {
+            boxArray[i].setLetter(character, cursorX, cursorY);
+        }
+        moveCursor(move);
+    }
+
+    public void updateCursor() {
+        lastBlink++;
+        if (lastBlink > 5) {
+            lastBlink = 0;
             blink = !blink;
         }
-        terminal.clearScreen();
-        terminal.setBackgroundColor(TextColor.ANSI.BLACK);
-        terminal.setForegroundColor(TextColor.ANSI.GREEN);
+    }
+
+    private void submitCurrentWord() {
+        boolean isAnyValid = false;
+        for (Box box : boxArray) {
+            boolean isValid = Words.getInstance().isWordValid(box.getWord(cursorY));
+            isAnyValid = isAnyValid || isValid;
+            if (isValid)
+                box.submitWord(cursorY);
+        }
+        if (isAnyValid && cursorY + 1 < tries) {
+            cursorY++;
+            cursorX = 0;
+        }
+    }
+
+    public String view(MatrixStream matrixStream) {
+        StringBuilder output = new StringBuilder();
         for (int y = 0; y < height; y++) {
-            terminal.setCursorPosition(0, y);
             for (int x = 0; x < width; x++) {
-                boolean isInABox = false;
+                String renderedCharacter = String.valueOf(matrixStream.get(x, y));
+                boolean renderedFromMatrix = true;
                 for (Box box : boxArray) {
                     if (box.isIn(y, x)) {
-                        isInABox = true;
-                        if (blink && !box.isWon() && box.offsetX(cursorX) == x && box.offsetY(cursorY) == y) {
-                            terminal.setBackgroundColor(TextColor.ANSI.GREEN);
-                            terminal.setForegroundColor(TextColor.ANSI.BLACK);
-                            terminal.putCharacter(box.getChar(x, y));
-                            terminal.setBackgroundColor(TextColor.ANSI.BLACK);
-                            terminal.setForegroundColor(TextColor.ANSI.GREEN);
+                        renderedCharacter = String.valueOf(box.getChar(x, y));
+                        renderedFromMatrix = false;
+                        if (box.isBorder(x, y)) {
+                            renderedCharacter = renderBorder(box, x, y, renderedCharacter);
+                        } else if (blink && !box.isWon() && box.offsetX(cursorX) == x && box.offsetY(cursorY) == y) {
+                            renderedCharacter = "█";
                         } else {
-                            TextColor color = box.getLetterState(x, y).getColor();
-                            if (color != null)
-                                terminal.setForegroundColor(color);
-                            terminal.putCharacter(box.getChar(x, y));
-                            if (color != null)
-                                terminal.setForegroundColor(TextColor.ANSI.GREEN);
+                            renderedCharacter = renderLetter(box, x, y, renderedCharacter);
                         }
+                        break;
                     }
                 }
-                if (!isInABox)
-                    terminal.putCharacter(matrixStream.get(x, y));
+                if (renderedFromMatrix && !renderedCharacter.equals(" ")) {
+                    renderedCharacter = Style.newStyle().foreground(ColorPalette.TEXT_BACKGROUND)
+                            .render(renderedCharacter);
+                }
+                output.append(renderedCharacter);
+            }
+            if (y < height - 1) {
+                output.append('\n');
             }
         }
-        terminal.flush();
+        return output.toString();
     }
+
+    private String renderBorder(Box box, int x, int y, String character) {
+        if (character.equals(" ")) {
+            return character;
+        }
+        return Style.newStyle().foreground(ColorPalette.BORDER).render(character);
+    }
+
+    private String renderLetter(Box box, int x, int y, String character) {
+        Box.State state = box.getLetterState(x, y);
+        if (state == Box.State.NEUTRAL || character.equals(" ")) {
+            return character;
+        }
+        return Style.newStyle().foreground(switch (state) {
+            case WRONG -> ColorPalette.WRONG_LETTER;
+            case ELSEWHERE -> ColorPalette.ELSEWHERE_LETTER;
+            case RIGHT -> ColorPalette.RIGHT_LETTER;
+            case NEUTRAL -> ColorPalette.TEXT_PRIMARY;
+        }).render(character);
+    }
+
 }

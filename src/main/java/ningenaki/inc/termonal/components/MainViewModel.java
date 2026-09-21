@@ -1,99 +1,125 @@
 package ningenaki.inc.termonal.components;
 
+import java.time.Duration;
+
 import org.springframework.stereotype.Component;
 
-import com.williamcallahan.tui4j.compat.bubbles.textarea.Textarea;
 import com.williamcallahan.tui4j.compat.bubbletea.Command;
 import com.williamcallahan.tui4j.compat.bubbletea.KeyPressMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.Message;
 import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.QuitMessage;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
+import com.williamcallahan.tui4j.compat.bubbletea.WindowSizeMessage;
+import ningenaki.inc.termonal.services.MatrixStream;
+import ningenaki.inc.termonal.services.Tab;
 
 @Component
 public class MainViewModel implements Model {
 
-    private Textarea editor = new Textarea();
+    private static final int DEFAULT_WIDTH = 80;
+    private static final int DEFAULT_HEIGHT = 24;
+    private static final Duration ANIMATION_INTERVAL = Duration.ofMillis(100);
+
+    private MatrixStream matrixStream;
+    private Tab[] tabs;
+    private int tabIndex;
+    private int width = DEFAULT_WIDTH;
+    private int height = DEFAULT_HEIGHT;
 
     @Override
     public Command init() {
-        editor.setWidth(200);
-        editor.setHeight(50);
-        editor.focus();
-        return null;
+        resize(width, height);
+        return Command.batch(animationCommand(), Command.checkWindowSize());
     }
 
     @Override
     public UpdateResult<? extends Model> update(Message msg) {
+        if (msg instanceof WindowSizeMessage windowSizeMessage) {
+            return handleResize(windowSizeMessage);
+        }
+        if (msg instanceof AnimationTick) {
+            return handleAnimationTick();
+        }
         if (msg instanceof KeyPressMessage keyPressMessage) {
-            return switch (keyPressMessage.key()) {
-                // "left" move the cursor left
-                case "left" -> UpdateResult.from(this.moveLeft());
-
-                // "right" move the cursor right
-                case "right" -> UpdateResult.from(this.moveRight());
-
-                // "backspace" deletes character before cursor
-                case "backspace" -> UpdateResult.from(this.removePreviousCharacter());
-
-                // "delete" deletes character before cursor
-                case "delete" -> UpdateResult.from(this.removeNextCharacter());
-
-                // "enter" submits current word if valid
-                case "enter" -> UpdateResult.from(this.validateWordAndSubmit());
-
-                // "tab" switches to next tab
-                case "tab" -> UpdateResult.from(this.nextTab());
-
-                // "shift+tab" switches to previous tab
-                case "shift+tab" -> UpdateResult.from(this.previousTab());
-
-                // "esc" quits
-                case "esc" -> UpdateResult.from(this, QuitMessage::new);
-
-                default -> UpdateResult.from(this);
-            };
+            return handleInput(keyPressMessage);
         }
         return UpdateResult.from(this);
     }
 
+    private UpdateResult<? extends Model> handleResize(WindowSizeMessage windowSizeMessage) {
+        resize(windowSizeMessage.width(), windowSizeMessage.height());
+        return UpdateResult.from(this);
+    }
+
+    private UpdateResult<? extends Model> handleAnimationTick() {
+        matrixStream.update();
+        tabs[tabIndex].updateCursor();
+        return UpdateResult.from(this, animationCommand());
+    }
+
+    private UpdateResult<? extends Model> handleInput(KeyPressMessage keyPressMessage) {
+        return switch (keyPressMessage.key()) {
+            case "left" -> UpdateResult.from(this.handleKey("left"));
+            case "right" -> UpdateResult.from(this.handleKey("right"));
+            case "backspace" -> UpdateResult.from(this.handleKey("backspace"));
+            case "delete" -> UpdateResult.from(this.handleKey("delete"));
+            case "enter" -> UpdateResult.from(this.handleKey("enter"));
+            case "tab" -> UpdateResult.from(this.nextTab());
+            case "shift+tab" -> UpdateResult.from(this.previousTab());
+            case "esc" -> UpdateResult.from(this, QuitMessage::new);
+            default -> UpdateResult.from(this.handleCharacter(keyPressMessage));
+        };
+    }
+
     private Model previousTab() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'previousTab'");
+        tabIndex = tabIndex == 0 ? tabs.length - 1 : tabIndex - 1;
+        return this;
     }
 
     private Model nextTab() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'nextTab'");
+        tabIndex = (tabIndex + 1) % tabs.length;
+        return this;
     }
 
-    private Model validateWordAndSubmit() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'validateWordAndSubmit'");
+    private Model handleKey(String key) {
+        tabs[tabIndex].handleKey(key);
+        return this;
     }
 
-    private Model removePreviousCharacter() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removePreviousCharacter'");
+    private Model handleCharacter(KeyPressMessage message) {
+        char[] runes = message.runes();
+        if (runes.length > 0) {
+            tabs[tabIndex].handleCharacter(runes[0], 1);
+        }
+        return this;
     }
 
-    private Model removeNextCharacter() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removeNextCharacter'");
+    private Command animationCommand() {
+        return Command.every(ANIMATION_INTERVAL, ignored -> new AnimationTick());
     }
 
-    private Model moveRight() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'moveRight'");
-    }
-
-    private Model moveLeft() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'moveLeft'");
+    private void resize(int newWidth, int newHeight) {
+        width = Math.max(1, newWidth);
+        height = Math.max(1, newHeight);
+        matrixStream = new MatrixStream(width, height);
+        try {
+            tabs = new Tab[] {
+                    new Tab(width, height, 1),
+                    new Tab(width, height, 2),
+                    new Tab(width, height, 4)
+            };
+            tabIndex = Math.min(tabIndex, tabs.length - 1);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Não foi possível redimensionar as abas", exception);
+        }
     }
 
     @Override
-    public String view() {        
-        return editor.view();
+    public String view() {
+        return tabs[tabIndex].view(matrixStream);
+    }
+
+    private record AnimationTick() implements Message {
     }
 }

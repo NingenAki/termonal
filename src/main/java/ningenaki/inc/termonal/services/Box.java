@@ -2,8 +2,6 @@ package ningenaki.inc.termonal.services;
 
 import java.util.Arrays;
 
-import com.googlecode.lanterna.TextColor;
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,17 +33,10 @@ public class Box {
     private Words words = Words.getInstance();
 
     public static enum State {
-        NEUTRAL(null),
-        WRONG(TextColor.ANSI.BLACK_BRIGHT),
-        ELSEWHERE(TextColor.ANSI.YELLOW_BRIGHT),
-        RIGHT(TextColor.ANSI.GREEN_BRIGHT);
-
-        @Getter
-        private TextColor color;
-
-        State(TextColor color) {
-            this.color = color;
-        }
+        NEUTRAL,
+        WRONG,
+        ELSEWHERE,
+        RIGHT
     }
 
     private final State[][] letterState;
@@ -110,6 +101,13 @@ public class Box {
     public boolean isIn(int y, int x) {
         return y >= originY && y < originY + height && x >= originX
                 && x < originX + width;
+    }
+
+    public boolean isBorder(int x, int y) {
+        int localX = x - originX;
+        int localY = y - originY;
+        return localX == 0 || localX == width - 1 || localY == 0 || localY == height - 1
+                || localX == width - 2 || localY == height - 2;
     }
 
     public int offsetX(int x) {

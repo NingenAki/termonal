@@ -1,17 +1,20 @@
 package ningenaki.inc.termonal.components;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
 import com.williamcallahan.tui4j.compat.bubbletea.Program;
 
+@Component 
 public class Runner implements CommandLineRunner {
-    private final MainViewModel app;
+    private final MainViewModel mainView;
 
-    public Runner(MainViewModel app) {
-        this.app = app;
+    public Runner(MainViewModel mainView) {
+        this.mainView = mainView;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        new Program(app).withAltScreen().run();
+        new Program(mainView).withAltScreen().run();
     }
 }
