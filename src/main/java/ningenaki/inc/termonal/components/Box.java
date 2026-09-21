@@ -9,7 +9,8 @@ import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.lipgloss.Style;
 import lombok.Getter;
 import lombok.Setter;
-import ningenaki.inc.termonal.services.Words;
+import ningenaki.inc.termonal.States.BoxState;
+import ningenaki.inc.termonal.States.Words;
 
 public class Box implements Model {
     @Getter
@@ -41,23 +42,25 @@ public class Box implements Model {
 
     private Words words = Words.getInstance();
 
-    public static enum State {
+    public static enum LetterState {
         NEUTRAL,
         WRONG,
-        ELSEWHERE,
+        MISPLACED,
         RIGHT
     }
 
-    private final State[][] letterState;
+    private final LetterState[][] letterState;
+    public BoxState state;
 
-    public Box(int wordSize, int tries, int wordIndex) {
-        this.tries = tries;
+    public Box(int wordSize, int maxTries, int wordIndex) {
+        this.state = new BoxState(maxTries, wordIndex);
+        this.tries = maxTries;
         this.wordSize = wordSize;
         this.wordIndex = wordIndex;
         width = LEFT_BORDER + wordSize * LETTER_X_SIZE + RIGHT_BORDER;
-        height = UPPER_BORDER + tries * LETTER_Y_SIZE + BOTTOM_BORDER;
+        height = UPPER_BORDER + maxTries * LETTER_Y_SIZE + BOTTOM_BORDER;
         box = new char[height][width];
-        letterState = new State[tries][wordSize];
+        letterState = new LetterState[maxTries][wordSize];
 
         fillBoxWithBorders();
         initLetters();
@@ -66,7 +69,7 @@ public class Box implements Model {
     public void submitWord(int cursorY) {
         String word = getWord(cursorY);
         addAccents(cursorY, words.get(word));
-        if(validateWord(words.getWordOfDay(wordIndex, true), word, cursorY)) {
+        if(validateWord(word, cursorY)) {
             setWon(true);
         }
     }
@@ -79,7 +82,7 @@ public class Box implements Model {
         }
         for (int j = 0; j < tries; j++) {
             for (int i = 0; i < wordSize; i++) {
-                letterState[j][i] = State.NEUTRAL;
+                letterState[j][i] = LetterState.NEUTRAL;
             }
         }
     }
@@ -188,22 +191,22 @@ public class Box implements Model {
                     : character;
         }
 
-        State state = getLetterState(x, y);
-        if (state == State.NEUTRAL) {
+        LetterState state = getLetterState(x, y);
+        if (state == LetterState.NEUTRAL) {
             return character;
         }
         return Style.newStyle().foreground(switch (state) {
             case WRONG -> ColorPalette.WRONG_LETTER;
-            case ELSEWHERE -> ColorPalette.ELSEWHERE_LETTER;
+            case MISPLACED -> ColorPalette.ELSEWHERE_LETTER;
             case RIGHT -> ColorPalette.RIGHT_LETTER;
             case NEUTRAL -> ColorPalette.PRIMARY;
         }).render(character);
     }
 
-    public State getLetterState(int x, int y) {
+    public LetterState getLetterState(int x, int y) {
         return isLetter(x, y)
                 ? letterState[outterToLetterIndexY(y)][outterToLetterIndexX(x)]
-                : State.NEUTRAL;
+                : LetterState.NEUTRAL;
     }
 
     private int outterToLetterIndexX(int x) {
@@ -221,35 +224,11 @@ public class Box implements Model {
                 && (y - originY - UPPER_BORDER) % LETTER_Y_SIZE == 0;
     }
 
-    public boolean validateWord(String answer, String word, int cursorY) {
+    public boolean validateWord(String word, int cursorY) {
         if (won)
             return true;
-        char[] letters = answer.toCharArray();
-        boolean valid = true;
-        for (int x = 0; x < wordSize; x++) {
-            if (answer.charAt(x) == word.charAt(x)) {
-                letterState[cursorY][x] = State.RIGHT;
-                letters[x] = EMPTY;
-            } else {
-                valid = false;
-            }
-        }
-        for (int x = 0; x < wordSize; x++) {
-            boolean found = letterState[cursorY][x] != State.NEUTRAL;
-            if (!found) {
-                for (int _x = 0; _x < wordSize; _x++) {
-                    if (letters[_x] == word.charAt(x)) {
-                        letterState[cursorY][x] = State.ELSEWHERE;
-                        letters[_x] = EMPTY;
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (!found)
-                letterState[cursorY][x] = State.WRONG;
-        }
-        return valid;
+        letterState[cursorY] = state.guess(word);
+        return state.isWon();
     }
 
     public void addAccents(int cursorY, String word) {

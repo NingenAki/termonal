@@ -19,7 +19,7 @@ public class Keyboard implements Model {
 
     public void addUsedLetters(CharSequence letters) {
         for (int i = 0; i < letters.length(); i++) {
-            usedLetters.add(Character.toUpperCase(letters.charAt(i)));
+            usedLetters.add(letters.charAt(i));
         }
     }
 

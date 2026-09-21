@@ -8,7 +8,7 @@ import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
-import ningenaki.inc.termonal.services.Words;
+import ningenaki.inc.termonal.States.Words;
 
 public class MatrixStream implements Model {
     private final int width;

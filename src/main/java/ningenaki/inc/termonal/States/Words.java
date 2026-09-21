@@ -1,4 +1,4 @@
-package ningenaki.inc.termonal.services;
+package ningenaki.inc.termonal.States;
 
 import java.io.File;
 import java.text.Normalizer;

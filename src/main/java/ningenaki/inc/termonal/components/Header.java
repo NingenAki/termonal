@@ -12,7 +12,7 @@ import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
 public class Header implements Model {
-    private static final String[] TAB_LABELS = { "SINGLE", "DUO", "QUARTET" };
+    private static final String[] TAB_LABELS = { "OVERVIEW", "SINGLE", "DUO", "QUARTET" };
     private final IntSupplier activeTabIndex;
 
     public Header(IntSupplier activeTabIndex) {

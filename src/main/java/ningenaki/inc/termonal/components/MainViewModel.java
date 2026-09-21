@@ -22,8 +22,9 @@ public class MainViewModel implements Model {
 
     private MatrixStream matrixStream;
     private Tab[] tabs;
+    private Overview overview;
     private Header header;
-    private int tabIndex;
+    private int tabIndex = 1;
     private int width = DEFAULT_WIDTH;
     private int height = DEFAULT_HEIGHT;
 
@@ -54,7 +55,9 @@ public class MainViewModel implements Model {
 
     private UpdateResult<? extends Model> handleAnimationTick() {
         matrixStream.update();
-        tabs[tabIndex].updateCursor();
+        if (tabIndex > 0) {
+            tabs[tabIndex - 1].updateCursor();
+        }
         return UpdateResult.from(this, animationCommand());
     }
 
@@ -83,14 +86,16 @@ public class MainViewModel implements Model {
     }
 
     private Model handleKey(String key) {
-        tabs[tabIndex].handleKey(key);
+        if (tabIndex > 0) {
+            tabs[tabIndex - 1].handleKey(key);
+        }
         return this;
     }
 
     private Model handleCharacter(KeyPressMessage message) {
         char[] runes = message.runes();
-        if (runes.length > 0) {
-            tabs[tabIndex].handleCharacter(runes[0], 1);
+        if (tabIndex > 0 && runes.length > 0) {
+            tabs[tabIndex - 1].handleCharacter(runes[0], 1);
         }
         return this;
     }
@@ -111,7 +116,8 @@ public class MainViewModel implements Model {
                     new Tab(width, boardHeight, 2, matrixStream),
                     new Tab(width, boardHeight, 4, matrixStream)
             };
-            tabIndex = Math.min(tabIndex, tabs.length - 1);
+                    overview = new Overview(width, boardHeight, tabs, matrixStream);
+                    tabIndex = Math.min(tabIndex, tabs.length);
         } catch (Exception exception) {
             throw new IllegalStateException("Não foi possível redimensionar as abas", exception);
         }
@@ -121,7 +127,7 @@ public class MainViewModel implements Model {
     public String view() {
         StringBuilder viewBuilder = new StringBuilder();
         viewBuilder.append(header.view()).append('\n');
-        viewBuilder.append(tabs[tabIndex].view());
+        viewBuilder.append(tabIndex == 0 ? overview.view() : tabs[tabIndex - 1].view());
         return viewBuilder.toString();
     }
 
