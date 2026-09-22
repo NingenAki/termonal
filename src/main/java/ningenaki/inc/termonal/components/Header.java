@@ -9,7 +9,8 @@ import com.williamcallahan.tui4j.compat.bubbletea.Command;
 import com.williamcallahan.tui4j.compat.bubbletea.Message;
 import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
-import com.williamcallahan.tui4j.compat.lipgloss.Style;
+
+import ningenaki.inc.termonal.enums.Styles;
 
 public class Header implements Model {
     private static final String[] TAB_LABELS = { "OVERVIEW", "SINGLE", "DUO", "QUARTET" };
@@ -44,8 +45,8 @@ public class Header implements Model {
         for (int i = 0; i < TAB_LABELS.length; i++) {
             String label = TAB_LABELS[i];
             String styleLabel = i == activeTabIndex.getAsInt()
-                    ? Style.newStyle().foreground(ColorPalette.ACCENT).render("[" + label + "]")
-                    : Style.newStyle().foreground(ColorPalette.TERTIARY).render(" " + label + " ");
+                    ? Styles.TAB_SELECTED.getStyle().render("[" + label + "]")
+                    : Styles.TAB.getStyle().render(" " + label + " ");
             header.append(styleLabel);
             if (i < TAB_LABELS.length - 1) {
                 header.append(' ');

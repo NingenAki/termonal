@@ -9,8 +9,14 @@ import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
+import lombok.Getter;
+import ningenaki.inc.termonal.enums.ColorPalette;
+import ningenaki.inc.termonal.enums.Styles;
+
+@Getter
 public class Keyboard implements Model {
     private final int width;
+    private final int height = 3;
     private final Set<Character> usedLetters = new HashSet<>();
 
     public Keyboard(int width) {
@@ -44,8 +50,8 @@ public class Keyboard implements Model {
             for (int i = 0; i < row.length(); i++) {
                 char letter = row.charAt(i);
                 String rendered = usedLetters.contains(letter)
-                        ? Style.newStyle().foreground(ColorPalette.MUTED).render(String.valueOf(letter))
-                        : Style.newStyle().foreground(ColorPalette.DIM).render(String.valueOf(letter));
+                        ? Styles.KEYBOARD_USED.getStyle().render(String.valueOf(letter))
+                        : Styles.KEYBOARD.getStyle().render(String.valueOf(letter));
                 output.append(rendered);
                 if (i < row.length() - 1) {
                     output.append(' ');

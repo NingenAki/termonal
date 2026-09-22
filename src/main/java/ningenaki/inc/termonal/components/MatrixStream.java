@@ -6,10 +6,11 @@ import com.williamcallahan.tui4j.compat.bubbletea.Command;
 import com.williamcallahan.tui4j.compat.bubbletea.Message;
 import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
-import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
-import ningenaki.inc.termonal.States.Words;
+import lombok.Getter;
+import ningenaki.inc.termonal.singletons.Words;
 
+@Getter
 public class MatrixStream implements Model {
     private final int width;
     private final int height;
@@ -42,24 +43,6 @@ public class MatrixStream implements Model {
 
     @Override
     public UpdateResult<? extends Model> update(Message msg) {
-        update();
-        return UpdateResult.from(this);
-    }
-
-    @Override
-    public String view() {
-        StringBuilder output = new StringBuilder();
-        Style matrixStyle = Style.newStyle().foreground(ColorPalette.TERTIARY);
-        for (int y = 0; y < height; y++) {
-            output.append(matrixStyle.render(new String(matrix[y])));
-            if (y < height - 1) {
-                output.append('\n');
-            }
-        }
-        return output.toString();
-    }
-
-    public void update() {
         for (int y = 0; y < height - 1; y++) {
             System.arraycopy(matrix[y + 1], 0, matrix[y], 0, width);
         }
@@ -75,6 +58,19 @@ public class MatrixStream implements Model {
                 matrix[height - 1][x] = ' ';
             }
         }
+        return UpdateResult.from(this);
+    }
+
+    @Override
+    public String view() {
+        StringBuilder output = new StringBuilder();
+        for (int y = 0; y < height; y++) {
+            output.append(new String(matrix[y]));
+            if (y < height - 1) {
+                output.append('\n');
+            }
+        }
+        return output.toString();
     }
 
     private boolean shouldStreamNewWord(int x) {

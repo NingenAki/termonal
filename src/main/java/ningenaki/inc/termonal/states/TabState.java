@@ -1,4 +1,4 @@
-package ningenaki.inc.termonal.States;
+package ningenaki.inc.termonal.states;
 
 
 public class TabState {

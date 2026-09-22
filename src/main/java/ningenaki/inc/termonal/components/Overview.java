@@ -6,6 +6,8 @@ import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
 import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
+import ningenaki.inc.termonal.enums.Styles;
+
 public class Overview implements Model {
     private final int width;
     private final int height;
@@ -44,10 +46,9 @@ public class Overview implements Model {
         int startRow = Math.max(0, (height - lines.length) / 2);
         for (int y = 0; y < height; y++) {
             int lineIndex = y - startRow;
-                String overlay = y == height - 1 ? commandFooter()
+            String overlay = y == height - 1 ? commandFooter()
                     : lineIndex >= 0 && lineIndex < lines.length ? lines[lineIndex] : "";
-            Style style = Style.newStyle().foreground(lineIndex == 0
-                    ? ColorPalette.ACCENT : ColorPalette.PRIMARY);
+            Style style = (lineIndex == 0 ? Styles.TAB_SELECTED : Styles.TEXT).getStyle();
             output.append(renderMatrixRow(matrixLines, y, overlay, style));
             if (y < height - 1) {
                 output.append('\n');
@@ -100,7 +101,8 @@ public class Overview implements Model {
     private String row(String name, Tab tab) {
         String state = tab.state.isWon() ? "WON" : tab.state.isGameOver() ? "GAME OVER" : "IN PROGRESS";
         return String.format("%-8s  %-10s  %d/%d guesses  %d/%d solved",
-                name, state, tab.state.getGuesses(), tab.state.getMaxTries(), tab.state.getSolvedCount(), tab.state.getWordCount());
+                name, state, tab.state.getGuesses(), tab.state.getMaxTries(), tab.state.getSolvedCount(),
+                tab.state.getWordCount());
     }
 
     private String center(String text) {

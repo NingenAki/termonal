@@ -1,7 +1,9 @@
-package ningenaki.inc.termonal.States;
+package ningenaki.inc.termonal.states;
+
+import java.util.Arrays;
 
 import lombok.Getter;
-import ningenaki.inc.termonal.components.Box.LetterState;
+import ningenaki.inc.termonal.singletons.Words;
 
 @Getter
 public class BoxState {
@@ -34,28 +36,26 @@ public class BoxState {
         char[] letters = this.word.toCharArray();
         this.guesses++;
         LetterState[] letterStates = new LetterState[wordSize];
+        Arrays.fill(letterStates, LetterState.WRONG);
         for (int x = 0; x < wordSize; x++) {
             if (word.charAt(x) == guess.charAt(x)) {
                 letterStates[x] = LetterState.RIGHT;
                 letters[x] = EMPTY;
-            } 
+            }
         }
         for (int x = 0; x < wordSize; x++) {
-            boolean found = letterStates[x] != LetterState.NEUTRAL;
-            if (!found) {
+            if (letterStates[x] != LetterState.RIGHT) {
                 for (int _x = 0; _x < wordSize; _x++) {
                     if (letters[_x] == guess.charAt(x)) {
                         letterStates[x] = LetterState.MISPLACED;
                         letters[_x] = EMPTY;
-                        found = true;
                         break;
                     }
                 }
             }
-            if (!found)
-                letterStates[x] = LetterState.WRONG;
         }
-        if(letterStates.length == 0 || java.util.Arrays.stream(letterStates).allMatch(state -> state == LetterState.RIGHT)) {
+        if (letterStates.length == 0
+                || java.util.Arrays.stream(letterStates).allMatch(state -> state == LetterState.RIGHT)) {
             this.win();
         } else if (this.guesses >= this.maxTries) {
             this.lose();

@@ -16,7 +16,7 @@ import com.williamcallahan.tui4j.compat.bubbletea.WindowSizeMessage;
 public class MainViewModel implements Model {
 
     private static final int DEFAULT_WIDTH = 80;
-    private static final int DEFAULT_HEIGHT = 24;
+    private static final int DEFAULT_HEIGHT = 32;
     private static final int HEADER_HEIGHT = 8;
     private static final Duration ANIMATION_INTERVAL = Duration.ofMillis(100);
 
@@ -54,7 +54,7 @@ public class MainViewModel implements Model {
     }
 
     private UpdateResult<? extends Model> handleAnimationTick() {
-        matrixStream.update();
+        matrixStream.update(null);
         if (tabIndex > 0) {
             tabs[tabIndex - 1].updateCursor();
         }
@@ -81,7 +81,7 @@ public class MainViewModel implements Model {
     }
 
     private Model nextTab() {
-        tabIndex = (tabIndex + 1) % tabs.length;
+        tabIndex = (tabIndex + 1) % (tabs.length + 1);
         return this;
     }
 
@@ -116,8 +116,8 @@ public class MainViewModel implements Model {
                     new Tab(width, boardHeight, 2, matrixStream),
                     new Tab(width, boardHeight, 4, matrixStream)
             };
-                    overview = new Overview(width, boardHeight, tabs, matrixStream);
-                    tabIndex = Math.min(tabIndex, tabs.length);
+            overview = new Overview(width, boardHeight, tabs, matrixStream);
+            tabIndex = Math.min(tabIndex, tabs.length + 1);
         } catch (Exception exception) {
             throw new IllegalStateException("Não foi possível redimensionar as abas", exception);
         }

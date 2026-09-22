@@ -1,4 +1,4 @@
-package ningenaki.inc.termonal.States;
+package ningenaki.inc.termonal.singletons;
 
 import java.io.File;
 import java.text.Normalizer;
