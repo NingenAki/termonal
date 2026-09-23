@@ -1,6 +1,7 @@
 package ningenaki.inc.termonal.components;
 
 import java.time.Duration;
+import java.util.function.IntSupplier;
 
 import org.springframework.stereotype.Component;
 
@@ -17,7 +18,7 @@ public class MainViewModel implements Model {
 
     private static final int DEFAULT_WIDTH = 80;
     private static final int DEFAULT_HEIGHT = 32;
-    private static final int HEADER_HEIGHT = 8;
+    private static final int MIN_HEIGHT = 32;
     private static final Duration ANIMATION_INTERVAL = Duration.ofMillis(100);
 
     private MatrixStream matrixStream;
@@ -108,9 +109,9 @@ public class MainViewModel implements Model {
         width = Math.max(1, newWidth);
         height = Math.max(1, newHeight);
         matrixStream = new MatrixStream(width, height);
-        header = new Header(() -> tabIndex);
+        header = new Header(width, height >= MIN_HEIGHT ? 8 : 3, (IntSupplier) () -> tabIndex);
         try {
-            int boardHeight = Math.max(1, height - HEADER_HEIGHT);
+            int boardHeight = Math.max(1, height - header.getHeight());
             tabs = new Tab[] {
                     new Tab(width, boardHeight, 1, matrixStream),
                     new Tab(width, boardHeight, 2, matrixStream),

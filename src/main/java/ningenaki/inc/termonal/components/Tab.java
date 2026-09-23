@@ -9,6 +9,7 @@ import com.williamcallahan.tui4j.compat.lipgloss.Style;
 import ningenaki.inc.termonal.enums.Styles;
 import ningenaki.inc.termonal.singletons.Words;
 import ningenaki.inc.termonal.states.TabState;
+import ningenaki.inc.termonal.utils.StringUtils;
 
 public class Tab implements Model {
     private final int width;
@@ -99,7 +100,7 @@ public class Tab implements Model {
     }
 
     public void handleKey(String key) {
-        if (state.isWon() || state.isGameOver()) {
+        if (state.isGameOver()) {
             return;
         }
         switch (key) {
@@ -124,7 +125,7 @@ public class Tab implements Model {
     }
 
     public void handleCharacter(Character character, int move) {
-        if (state.isWon() || state.isGameOver()) {
+        if (state.isGameOver()) {
             return;
         }
         for (int i = 0; i < boxes.length; i++) {
@@ -145,7 +146,11 @@ public class Tab implements Model {
 
     @Override
     public String view() {
-        return state.isWon() || state.isGameOver() ? renderResultScreen() : renderBoard();
+        return state.isGameOver()
+                ? renderResultScreen()
+                : width >= boxes.length * (boxes[0].getWidth() + GAP) - GAP
+                        ? renderBoard()
+                        : renderError("Window is too small for this mode");
     }
 
     public void updateCursor() {
@@ -154,6 +159,21 @@ public class Tab implements Model {
             lastBlink = 0;
             blink = !blink;
         }
+    }
+
+    private String renderError(String msg) {
+        StringBuilder result = new StringBuilder();
+        for (int y = 0; y < height / 2; y++) {
+            result.append(" ".repeat(width));
+            result.append('\n');
+        }
+        result.append(StringUtils.center(msg, width, ' '));
+        result.append('\n');
+        for (int y = height / 2 + 1; y < height; y++) {
+            result.append(" ".repeat(width));
+            result.append('\n');
+        }
+        return result.toString();
     }
 
     private String renderBoard() {
@@ -191,7 +211,7 @@ public class Tab implements Model {
     }
 
     private void submitCurrentWord() {
-        if (state.isWon() || state.isGameOver())
+        if (state.isGameOver())
             return;
         boolean isAnyValid = false;
         for (Box box : boxes) {
@@ -205,7 +225,7 @@ public class Tab implements Model {
         }
         if (isAnyValid) {
             state.guess();
-            if (!state.isWon() && !state.isGameOver() && cursorY + 1 < state.getMaxTries()) {
+            if (!state.isGameOver() && cursorY + 1 < state.getMaxTries()) {
                 cursorY++;
                 cursorX = 0;
             }
@@ -268,7 +288,7 @@ public class Tab implements Model {
 
     private String footer() {
         StringBuilder result = new StringBuilder();
-        if (!state.isWon() || state.isGameOver())
+        if (!state.isGameOver())
             result.append(keyboard.view());
         else
             for (int y = 0; y < keyboard.getHeight(); y++) {
@@ -280,7 +300,7 @@ public class Tab implements Model {
     }
 
     private String command() {
-        String comands = state.isWon() || state.isGameOver()
+        String comands = state.isGameOver()
                 ? "TAB switch   ESC quit"
                 : "←/→ move   ENTER submit   TAB switch   ESC quit";
 

@@ -7,10 +7,8 @@ import com.williamcallahan.tui4j.compat.bubbletea.Command;
 import com.williamcallahan.tui4j.compat.bubbletea.Message;
 import com.williamcallahan.tui4j.compat.bubbletea.Model;
 import com.williamcallahan.tui4j.compat.bubbletea.UpdateResult;
-import com.williamcallahan.tui4j.compat.lipgloss.Style;
 
 import lombok.Getter;
-import ningenaki.inc.termonal.enums.ColorPalette;
 import ningenaki.inc.termonal.enums.Styles;
 
 @Getter

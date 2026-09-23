@@ -25,9 +25,11 @@ public class BoxState {
 
     public void win() {
         this.won = true;
+        this.gameOver = true;
     }
 
     public void lose() {
+        this.won = false;
         this.gameOver = true;
     }
 

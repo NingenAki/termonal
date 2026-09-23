@@ -1,6 +1,8 @@
 package ningenaki.inc.termonal.states;
 
+import lombok.Getter;
 
+@Getter 
 public class TabState {
     private static final int TRIES_SINGLE = 6;
     private static final int TRIES_DUO = 7;
@@ -29,25 +31,12 @@ public class TabState {
             default -> throw new Exception("Número de palavras inválido");
         };
     }
-
-
+    
     private boolean allBoxesWon() {
         for (BoxState box : boxes)
             if (!box.isWon())
                 return false;
         return true;
-    }
-
-    public BoxState[] getBoxes() {
-        return boxes;
-    }
-
-    public int getGuesses() {
-        return guesses;
-    }
-
-    public int getMaxTries() {
-        return maxTries;
     }
 
     public int getWordCount() {
@@ -62,17 +51,9 @@ public class TabState {
         return solved;
     }
 
-    public boolean isWon() {
-        return won;
-    }
-
-    public boolean isGameOver() {
-        return gameOver;
-    }
-
     public void guess() {
         guesses++;
         won = allBoxesWon();
-        gameOver = !won && guesses >= maxTries;
+        gameOver = won || guesses >= maxTries;
     }
 }

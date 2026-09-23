@@ -60,7 +60,7 @@ public class Box implements Model {
         String word = getWord(cursorY);
         addAccents(cursorY, words.get(word));
 
-        if (!state.isWon() && !state.isGameOver() && word != null)
+        if (!state.isGameOver() && word != null)
             letterState[cursorY] = state.guess(word);
     }
 
@@ -72,7 +72,7 @@ public class Box implements Model {
     public void setCursorPosition(int cursorX, int cursorY, boolean visible) {
         this.cursorX = cursorX;
         this.cursorY = cursorY;
-        cursorVisible = visible;
+        cursorVisible = visible && !state.isGameOver();
     }
 
     @Override
