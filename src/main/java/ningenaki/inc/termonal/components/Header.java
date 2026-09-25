@@ -69,7 +69,7 @@ public class Header implements Model {
             menuWidth += label.length() + 1;
         }
         header.append(Styles.TAB_MENU.getStyle()
-                .render(" ".repeat(width - menuWidth)));
+            .render(" ".repeat(Math.max(0, width - menuWidth))));
         return header.toString();
     }
 
