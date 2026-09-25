@@ -26,39 +26,44 @@ Termonal is a terminal-based word game inspired by Wordle, built with Java and S
 ## Project Structure
 
 ```text
-src/
-  main/
-    java/
-      ningenaki/inc/termonal/
-        components/      # terminal UI components
-        configs/         # app bootstrap and runner
-        enums/           # style and palette definitions
-        models/          # JPA entities
-        repositories/    # repositories
-        singletons/      # shared word dictionary
-        states/          # game state classes
-        utils/           # helpers
-    resources/
-      application.properties
-      application-local.properties
-      palavras5.json
+client/
+  src/main/java/         # terminal UI and standalone client launcher
+  src/main/resources/    # client assets
+server/
+  src/main/java/         # Spring Boot application, entities, repositories
+  src/main/resources/    # server and database configuration
 ```
 
 ## Prerequisites
 
 - JDK 21+
 - Maven 3.9+
-- A PostgreSQL-compatible database (the project is configured for Supabase/Postgres)
+- A PostgreSQL-compatible database only for the optional server/database profile
 
 ## Running the App
 
-From the project root:
+Build both modules from the project root:
 
 ```bash
-./mvnw spring-boot:run
+./mvnw clean package
 ```
 
-If you are using the local profile, the app will pick up the configuration from `src/main/resources/application-local.properties`.
+The packaged application runs as a client by default and does not need database
+credentials. This is the command to distribute to clients:
+
+```bash
+java -jar client/target/termonal-client-0.0.1-SNAPSHOT.jar
+```
+
+Database access is reserved for a trusted server/backend. Start that process
+with the `database` profile and keep the password in its environment:
+
+```bash
+export SUPABASE_PASSWORD='your-database-password'
+java -jar server/target/termonal-server-0.0.1-SNAPSHOT.jar --spring.profiles.active=database
+```
+
+Optional database overrides are `SUPABASE_PROJECT` and `SUPABASE_HOST`.
 
 ## Controls
 
@@ -75,5 +80,5 @@ The game presents a word grid with multiple simultaneous boards depending on the
 ## Notes
 
 - The project is still under active development.
-- The database connection is configured through Spring properties and Supabase host settings.
+- The database connection is configured through the optional `database` profile; never distribute its password with client JARs.
 - The word list used by the game is provided in the resources folder.
